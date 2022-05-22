@@ -10,14 +10,15 @@ class Backuper:
     vk_host = "https://api.vk.com/method/"
     ya_host = "https://cloud-api.yandex.net:443"
 
-    def __init__(self, vk_id, ya_token, count=5, album_id="profile", vk_api_version="5.131",
+    def __init__(self, vk_id, ya_token, vk_api_version="5.131",
                  vk_token="a67f00c673c3d4b12800dd0ba29579ec56d804f3c5f3bbcef5328d4b3981fa5987b951cf2c8d8b24b9abd"):
+        self.count = None
         self.photos = None
         self.ya_token = ya_token
         self.vk_token = vk_token
         self.vk_api_version = vk_api_version
-        self.count = count
-        self.album_id = album_id
+        #self.count = count
+        #self.album_id = album_id
 
         self._set_requied_parameters()
 
@@ -27,6 +28,7 @@ class Backuper:
             self.vk_id = self._screen_name_to_vkid(vk_id)
 
     def _get_vk_photos_response(self):
+        print(f"Обращение к ВК за списком фото для id {self.vk_id}, альбом {self.album_id}")
         vk_method = "photos.get"
         href = self.vk_host + vk_method
         params = {"owner_id": self.vk_id, "album_id": self.album_id, "extended": "1", "count": self.count,
@@ -37,7 +39,7 @@ class Backuper:
         self.vk_response = res
 
     def _create_photos_list(self):
-
+        print("Обработка ответа от VK")
         self.photos = []
         for item in self.vk_response["response"]["items"]:
             photo = {
@@ -51,6 +53,7 @@ class Backuper:
         # pprint(self.photos)
 
     def _create_filenames(self):
+        print("Генерация имен файлов")
         likes_count = dict(Counter(photo['likes'] for photo in self.photos))
         # print(likes_count)
         for i, photo in enumerate(self.photos):
@@ -73,12 +76,23 @@ class Backuper:
             }
 
         def _create_dir(inner_dir_name):
+            print(f"Создание директории {inner_dir_name}")
             method = "/v1/disk/resources"
             href = self.ya_host + method
             params = {"path": inner_dir_name, "overwrite": "true"}
             response = requests.put(url=href, headers=self.ya_headers, params=params)
             # pprint(response.json())
             return response.status_code
+
+        def _get_disk_name():
+            method = "/v1/disk/"
+            href = self.ya_host + method
+            params = {"fields": "user"}
+            response = requests.get(url=href, headers=self.ya_headers, params=params)
+            res= response.json()
+            return res["user"]["login"]
+
+
 
         _set_ya_headers()
         _create_dir(dir_name)
@@ -87,7 +101,9 @@ class Backuper:
         href = self.ya_host + method
         dir_path_yadisk = dir_name + "/"
         self.response = []
-        for photo in self.photos:
+        print(f"Загрузка {len(self.photos)} фото на Яндекс.Диск {_get_disk_name()}:")
+
+        for i, photo in enumerate(self.photos):
             file_path_yadisk = dir_path_yadisk + photo["filename"]
             params = {"url": photo["url"], "path": file_path_yadisk}  # , "fields":  "name,_embedded"}
             response = requests.post(url=href, headers=self.ya_headers, params=params)
@@ -95,8 +111,9 @@ class Backuper:
                 "file_name": photo["filename"],
                 "size": photo["size"]
             })
+            print(f"Загружен файл {file_path_yadisk}. Выполнено {(i+1) / len(self.photos)*100:.2f}%")
             # pprint(response.json())
-        # pprint(self.response)
+        # pprint(self.response
 
     def _set_requied_parameters(self):
         self.req_params = {
@@ -107,18 +124,21 @@ class Backuper:
     def _screen_name_to_vkid(self, screen_name):
         method = "users.get"
         href = self.vk_host + method
-        params = {"owner_id": screen_name}
+        params = {"user_ids": screen_name}
         response = requests.get(url=href, params={**params, **self.req_params})
         res = response.json()
         # pprint(res)
         return str(res["response"][0]["id"])
 
-    def create_backup(self):
+    def create_backup(self, count=5, album_id="profile"):
+        self.count = count
+        self.album_id = album_id
 
         self._get_vk_photos_response()
         self._create_photos_list()
         self._create_filenames()
         self._copy_to_yadisk()
+        print("Завершено.")
 
         json_object = json.dumps(self.response)
         return json_object
@@ -132,11 +152,10 @@ if __name__ == '__main__':
 
     # id = id_begemot
 
-    backup = Backuper("begemot_korovin", ya_token)
+    #backup = Backuper("begemot_korovin", ya_token)
 
-    pprint(backup.create_backup().json())
+    backup = Backuper("natalia.bardo", ya_token)
 
-    # backup._get_vk_photos_response()
-    # backup._create_photos_list()
-    # backup._create_filenames()
-    # backup._copy_to_yadisk()
+
+    pprint(backup.create_backup(count=100))
+
