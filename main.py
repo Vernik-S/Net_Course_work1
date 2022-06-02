@@ -41,7 +41,7 @@ class Backuper:
 
 
 if __name__ == '__main__':
-    print(os.environ)
+    #print(os.environ)
 
     # with open("yandex_token.txt") as token_file:
     #    ya_token = token_file.read()
@@ -51,8 +51,10 @@ if __name__ == '__main__':
     # id = id_begemot
     try:
         ya_token = os.environ["super_secret"]
+        print("Token from environment")
     except:
         ya_token = yandex_token_from_file
+        print("Token from file")
 
     backup = Backuper("begemot_korovin", ya_token)  # ya_token
 
