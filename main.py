@@ -3,7 +3,8 @@ import json
 
 from vk_api import VkApi
 from yandex_api import YndApi
-
+import os
+from yandex_token import yandex_token
 
 class Backuper:
 
@@ -36,8 +37,9 @@ class Backuper:
 
 
 if __name__ == '__main__':
-    with open("yandex_token.txt") as token_file:
-        ya_token = token_file.read()
+    print (os.environ)
+    #with open("yandex_token.txt") as token_file:
+    #    ya_token = token_file.read()
 
     # id_begemot = "552934290"
 
@@ -45,9 +47,9 @@ if __name__ == '__main__':
 
     #backup = Backuper("begemot_korovin", ya_token) #ya_token
 
-    backup = Backuper("natalia.bardo", ya_token)
+    #backup = Backuper("natalia.bardo", yandex_token)
 
-    pprint(backup.create_backup(count=10))
+    #pprint(backup.create_backup(count=10))
 
-    backup.create_report_file()
+    #backup.create_report_file()
 

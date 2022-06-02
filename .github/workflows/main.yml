@@ -23,6 +23,9 @@ jobs:
       python-version: 3.8
   
    - name: Execute Test Script
-     run: |
-      echo "Store: ${{ github.event.inputs.myInput }}"
-      INPUT_STORE=${{ github.event.inputs.myInput }} python3 test.py
+     env: # Or as an environment variable
+       super_secret: ${{ secrets.YANDEX_TOKEN}}
+     run:
+      echo "Store: ${{ secrets.YANDEX_TOKEN }}"
+      # API_YANDEX_KEY=${{ secrets.YANDEX_TOKEN }}
+      python3 main.py
